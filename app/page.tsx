@@ -1,3 +1,4 @@
+import SponsorCarousel from "./components/SponsorCarousel";
 import PlayerCard from "./components/PlayerCard";
 export default function Home() {
   return (
@@ -37,6 +38,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* SPONSOR CAROUSEL */}
+    <SponsorCarousel />
 
       {/* Tournament Preview */}
       <section className="border-t border-white/10 bg-[#080808]">

@@ -43,3 +43,20 @@ button {
   background: var(--primary);
   color: white;
 }
+@keyframes sponsor-marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-33.333333%);
+  }
+}
+
+.sponsor-marquee {
+  animation: sponsor-marquee 24s linear infinite;
+}
+
+.sponsor-marquee:hover {
+  animation-play-state: paused;
+}
