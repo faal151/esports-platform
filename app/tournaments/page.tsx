@@ -8,6 +8,7 @@ type Tournament = {
   format: string;
   organizer: string;
   reward: string;
+  prizePool: string;
 };
 
 const tournaments: Tournament[] = [
@@ -19,8 +20,9 @@ const tournaments: Tournament[] = [
     location: "Kabupaten Lokal",
     slots: "32 Teams",
     format: "BO3 • Elimination",
-    organizer: "PINTO ESPORT",
+    organizer: "SMEA PREMIUM TAKENGON",
     reward: "Tournament Achievement",
+    prizePool: "Rp 5.000.000",
   },
 ];
 
@@ -87,50 +89,72 @@ export default function TournamentsPage() {
                   {tournament.title}
                 </h2>
 
-                {/* Info */}
-                <div className="mt-6 space-y-3 border-t border-white/10 pt-5">
+                {/* Prize Pool */}
+<div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/5 p-5 shadow-[0_0_30px_rgba(255,30,30,0.08)]">
+  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-red-500">
+    🏆 Total Prize Pool
+  </p>
 
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">
-                      Location
-                    </span>
+  <p className="mt-2 text-3xl font-black tracking-tight text-white">
+    {tournament.prizePool}
+  </p>
 
-                    <span className="font-semibold text-gray-300">
-                      {tournament.location}
-                    </span>
-                  </div>
+  <p className="mt-1 text-xs text-gray-600">
+    Total tournament reward
+  </p>
+</div>
 
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">
-                      Slots
-                    </span>
+{/* Tournament Info */}
+<div className="mt-5 space-y-3 border-t border-white/10 pt-5">
 
-                    <span className="font-semibold text-gray-300">
-                      {tournament.slots}
-                    </span>
-                  </div>
+  <div className="flex justify-between text-sm">
+    <span className="text-gray-600">
+      Location
+    </span>
 
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">
-                      Format
-                    </span>
+    <span className="font-semibold text-gray-300">
+      {tournament.location}
+    </span>
+  </div>
 
-                    <span className="font-semibold text-gray-300">
-                      {tournament.format}
-                    </span>
-                  </div>
+  <div className="flex justify-between text-sm">
+    <span className="text-gray-600">
+      Slots
+    </span>
 
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">
-                      Organizer
-                    </span>
+    <span className="font-semibold text-gray-300">
+      {tournament.slots}
+    </span>
+  </div>
 
-                    <span className="font-semibold text-gray-300">
-                      {tournament.organizer}
-                    </span>
-                  </div>
+  <div className="flex justify-between text-sm">
+    <span className="text-gray-600">
+      Format
+    </span>
 
-                </div>
+    <span className="font-semibold text-gray-300">
+      {tournament.format}
+    </span>
+  </div>
+
+</div>
+
+{/* Organizer */}
+<div className="mt-5 flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-4">
+  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 text-sm font-black text-red-500">
+    P
+  </div>
+
+  <div>
+    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600">
+      Organized By
+    </p>
+
+    <p className="mt-1 text-sm font-black uppercase text-white">
+      {tournament.organizer}
+    </p>
+  </div>
+</div>
 
                 {/* Reward */}
                 <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.02] p-4">

@@ -29,6 +29,21 @@ export default function TournamentDetailPage() {
                 </span>
               </div>
 
+{/* Prize Pool */}
+<div className="mt-8 inline-flex flex-col rounded-2xl border border-red-500/30 bg-red-500/5 px-6 py-5 shadow-[0_0_40px_rgba(255,30,30,0.12)]">
+  <p className="text-xs font-black uppercase tracking-[0.3em] text-red-500">
+    🏆 Total Prize Pool
+  </p>
+
+  <p className="mt-2 text-4xl font-black tracking-tight text-white md:text-5xl">
+    Rp 5.000.000
+  </p>
+
+  <p className="mt-2 text-xs font-medium text-gray-500">
+    Grand prize + tournament rewards
+  </p>
+</div>
+
               <h1 className="mt-6 text-4xl font-black uppercase leading-tight md:text-6xl">
                 PINTO Local
                 <br />
