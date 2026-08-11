@@ -14,9 +14,42 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PINTO ESPORTS.",
+  metadataBase: new URL("https://esports-platform-rho.vercel.app"),
+
+  title: {
+    default: "PINTO ESPORTS.",
+    template: "%s | PINTO ESPORTS.",
+  },
+
   description:
-    "PINTO ESPORTS — Competitive esports platform for players, teams, and tournaments.",
+    "PINTO ESPORTS — Platform esports untuk player, squad, tournament, dan competitive record.",
+
+  openGraph: {
+    title: "PINTO ESPORTS.",
+    description:
+      "Platform esports untuk player, squad, tournament, dan competitive record.",
+    url: "https://esports-platform-rho.vercel.app",
+    siteName: "PINTO ESPORTS.",
+    locale: "id_ID",
+    type: "website",
+
+    images: [
+      {
+        url: "/opengraph-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "PINTO ESPORTS.",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "PINTO ESPORTS.",
+    description:
+      "Platform esports untuk player, squad, tournament, dan competitive record.",
+    images: ["/opengraph-image.png"],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
