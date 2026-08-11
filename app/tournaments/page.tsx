@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type Tournament = {
   title: string;
   game: string;
@@ -168,12 +170,12 @@ export default function TournamentsPage() {
                 </div>
 
                 {/* Button */}
-                <a
+                <Link
   href="/tournaments/pinto-local-championship"
-  className="mt-6 block w-full rounded-lg bg-red-600 px-5 py-3 text-center text-sm font-black uppercase tracking-wide transition hover:bg-red-500 hover:shadow-[0_0_25px_rgba(255,30,30,0.25)]"
+  className="mt-6 block w-full rounded-lg bg-red-600 px-5 py-3 text-center text-sm font-black uppercase tracking-wide transition-all duration-300 hover:bg-red-500 hover:shadow-[0_0_25px_rgba(255,30,30,0.35)] hover:-translate-y-0.5"
 >
   View Tournament
-</a>
+</Link>
 
               </div>
             </article>

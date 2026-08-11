@@ -3,32 +3,6 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#050505] text-white">
       {/* Navigation */}
-      <nav className="border-b border-white/10">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <div className="text-xl font-black tracking-wider">
-            PINTO <span className="text-red-500">ESPORTS.</span>
-          </div>
-
-          <div className="hidden gap-8 text-sm font-medium text-gray-400 md:flex">
-            <a href="#" className="transition hover:text-white">
-              Tournaments
-            </a>
-            <a href="#" className="transition hover:text-white">
-              Players
-            </a>
-            <a href="#" className="transition hover:text-white">
-              Teams
-            </a>
-            <a href="#" className="transition hover:text-white">
-              Sponsors
-            </a>
-          </div>
-
-          <button className="rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold transition hover:border-red-500 hover:text-red-500">
-            Login
-          </button>
-        </div>
-      </nav>
 
       {/* Hero */}
       <section className="relative overflow-hidden">
