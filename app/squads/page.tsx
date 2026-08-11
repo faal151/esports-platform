@@ -30,7 +30,6 @@ export default function SquadsPage() {
   return (
     <main className="min-h-screen bg-[#050505] px-6 py-16 text-white">
       <div className="mx-auto max-w-7xl">
-
         {/* Header */}
         <div className="mb-12">
           <p className="text-sm font-bold uppercase tracking-[0.25em] text-red-500">
@@ -42,8 +41,8 @@ export default function SquadsPage() {
           </h1>
 
           <p className="mt-4 max-w-2xl text-gray-500">
-            Temukan squad esports, lihat roster, identitas tim,
-            dan competitive record mereka.
+            Temukan squad esports, lihat roster, identitas tim, dan competitive
+            record mereka.
           </p>
         </div>
 
@@ -87,65 +86,55 @@ export default function SquadsPage() {
 
               {/* Info */}
               <div className="mt-6 space-y-3 border-y border-white/10 px-6 py-5">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Owner</span>
 
-  <div className="flex justify-between text-sm">
-    <span className="text-gray-600">
-      Owner
-    </span>
+                  <span className="font-semibold text-gray-300">
+                    {squad.owner}
+                  </span>
+                </div>
 
-    <span className="font-semibold text-gray-300">
-      {squad.owner}
-    </span>
-  </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Manager</span>
 
-  <div className="flex justify-between text-sm">
-    <span className="text-gray-600">
-      Manager
-    </span>
+                  <span className="font-semibold text-gray-300">
+                    {squad.manager}
+                  </span>
+                </div>
 
-    <span className="font-semibold text-gray-300">
-      {squad.manager}
-    </span>
-  </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Squad Leader</span>
 
-  <div className="flex justify-between text-sm">
-    <span className="text-gray-600">
-      Squad Leader
-    </span>
+                  <span className="font-semibold text-gray-300">
+                    {squad.leader}
+                  </span>
+                </div>
 
-    <span className="font-semibold text-gray-300">
-      {squad.leader}
-    </span>
-  </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Roster</span>
 
-  <div className="flex justify-between text-sm">
-    <span className="text-gray-600">
-      Roster
-    </span>
+                  <span className="font-semibold text-gray-300">
+                    {squad.rosterCount} Players
+                  </span>
+                </div>
+              </div>
 
-    <span className="font-semibold text-gray-300">
-      {squad.rosterCount} Players
-    </span>
-  </div>
+              <div className="mx-6 rounded-xl border border-green-500/20 bg-green-500/5 p-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-green-400">
+                  {squad.recruitmentStatus === "Open"
+                    ? "🟢 Open to Recruitment"
+                    : "Recruitment Closed"}
+                </p>
 
-</div>
+                <p className="mt-2 text-sm font-bold text-white">
+                  Looking for {squad.recruitmentTarget}
+                </p>
 
-<div className="mx-6 rounded-xl border border-green-500/20 bg-green-500/5 p-4">
-  <p className="text-[10px] font-black uppercase tracking-widest text-green-400">
-    {squad.recruitmentStatus === "Open"
-      ? "🟢 Open to Recruitment"
-      : "Recruitment Closed"}
-  </p>
-
-  <p className="mt-2 text-sm font-bold text-white">
-    Looking for {squad.recruitmentTarget}
-  </p>
-
-  <p className="mt-1 text-xs text-gray-600">
-    Squad ini terbuka untuk kandidat yang ingin bergabung
-    sebagai {squad.recruitmentTarget.toLowerCase()}.
-  </p>
-</div>
+                <p className="mt-1 text-xs text-gray-600">
+                  Squad ini terbuka untuk kandidat yang ingin bergabung sebagai{" "}
+                  {squad.recruitmentTarget.toLowerCase()}.
+                </p>
+              </div>
 
               {/* Action */}
               <div className="p-6">
@@ -159,7 +148,6 @@ export default function SquadsPage() {
             </article>
           ))}
         </section>
-
       </div>
     </main>
   );
