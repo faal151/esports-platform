@@ -1,3 +1,4 @@
+import PlayerCard from "./components/PlayerCard";
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#050505] text-white">
@@ -131,6 +132,39 @@ export default function Home() {
         </div>
       </section>
 
+    {/* Player Card Preview */}        
+
+      <section className="mx-auto max-w-7xl px-6 py-20">
+        <div className="mb-10">
+          <p className="text-sm font-bold uppercase tracking-widest text-red-500">
+            Player Identity
+          </p>
+
+        <h2 className="mt-2 text-3xl font-black uppercase">
+         Player Card
+        </h2>
+
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-500">
+          Profil esports yang menyimpan identitas, statistik, dan achievement
+          seorang player.
+        </p>
+    </div>
+
+      <PlayerCard
+        name="Faal"
+        ign="FAAL"
+        game="Mobile Legends"
+        gameSlug="mobile-legends"
+        role="Jungler"
+          teamName="STG Squad"
+      teamLogo="/teams/stg-squad.jpeg"
+        achievements={8}
+        wins={12}
+        matches={42}
+        playerId="PNT-00001"
+      />
+    </section>
+      
       {/* Player / Team / Organizer */}
       <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="grid gap-6 md:grid-cols-3">
