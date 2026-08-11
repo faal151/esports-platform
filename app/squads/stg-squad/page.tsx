@@ -4,7 +4,7 @@ const roster = [
     name: "Faal",
     role: "Jungler",
     playerId: "PNT-00001",
-    photo: "/players/faal.jpeg",
+    photo: "/players/faal.png",
   },
   {
     ign: "PLAYER 02",
