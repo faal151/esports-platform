@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "./components/Navbar";
+import { createClient } from "@/lib/supabase/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,13 +38,16 @@ export const metadata: Metadata = {
   },
 
   twitter: {
-  card: "summary_large_image",
-  title: "PINTO ESPORTS.",
-  description:
-    "Platform esports untuk player, squad, tournament, dan competitive record.",
-},
+    card: "summary_large_image",
+    title: "PINTO ESPORTS.",
+    description:
+      "Platform esports untuk player, squad, tournament, dan competitive record.",
+  },
 };
-export default function RootLayout({ children }: LayoutProps<"/">) {
+
+export default function RootLayout({
+  children,
+}: LayoutProps<"/">) {
   return (
     <html
       lang="en"
