@@ -20,6 +20,10 @@ const sponsors: Sponsor[] = [
     name: "SMEA PREMIUM TAKENGON",
     logo: "/sponsors/smea-premium.jpeg",
   },
+  {
+    name: "MAMIN SELULER",
+    logo: "/sponsors/mamin-seluler.png",
+  },
 ];
 
 export default function SponsorCarousel() {

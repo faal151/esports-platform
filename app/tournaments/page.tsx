@@ -11,20 +11,24 @@ type Tournament = {
   organizer: string;
   reward: string;
   prizePool: string;
+  reward1: string;
+  ecertificate: string;
 };
 
 const tournaments: Tournament[] = [
   {
-    title: "PINTO Local Championship",
+    title: "SMEA PREMIUM TAKENGON Goes To Anniversary Vol. 1",
     game: "Mobile Legends",
     status: "Registration Open",
     date: "20 AUG 2026",
-    location: "Kabupaten Lokal",
+    location: "Acceh Tengah",
     slots: "32 Teams",
     format: "BO3 • Elimination",
     organizer: "SMEA PREMIUM TAKENGON",
     reward: "Tournament Achievement",
     prizePool: "Rp 5.000.000",
+    reward1: "Fresh Money",
+    ecertificate: "E-Certificate",
   },
 ];
 
@@ -158,6 +162,8 @@ export default function TournamentsPage() {
   </div>
 </div>
 
+
+
                 {/* Reward */}
                 <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.02] p-4">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600">
@@ -166,6 +172,14 @@ export default function TournamentsPage() {
 
                   <p className="mt-1 text-sm font-bold text-white">
                     🏆 {tournament.reward}
+                  </p>
+
+                <p className="mt-1 text-sm font-bold text-white">
+                    💵 {tournament.reward1}
+                  </p>
+
+                  <p className="mt-1 text-sm font-bold text-white">
+                    📜 {tournament.ecertificate}
                   </p>
                 </div>
 

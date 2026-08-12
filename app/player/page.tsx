@@ -1,92 +1,19 @@
-"use client";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { getCurrentUser } from "../../lib/supabase/auth";
+import LogoutButton from "../components/LogoutButton";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "../../lib/supabase/client";
+export default async function PlayerDashboardPage() {
+  const { user, profile } = await getCurrentUser();
 
-type Profile = {
-  id: string;
-  username: string | null;
-  full_name: string | null;
-  avatar_url: string | null;
-  role: string | null;
-  bio: string | null;
-};
-
-export default function PlayersPage() {
-  const router = useRouter();
-  const supabase = createClient();
-
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [loggingOut, setLoggingOut] = useState(false);
-
-  useEffect(() => {
-    async function loadPlayer() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
-
-      setEmail(user.email ?? "");
-
-      const { data: profileData, error } = await supabase
-        .from("profiles")
-        .select("id, username, full_name, avatar_url, role, bio")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Profile error:", error);
-      }
-
-      setProfile(profileData);
-      setLoading(false);
-    }
-
-    loadPlayer();
-  }, [router, supabase]);
-
-  async function handleLogout() {
-    setLoggingOut(true);
-
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      console.error("Logout error:", error);
-      setLoggingOut(false);
-      return;
-    }
-
-    router.replace("/login");
-    router.refresh();
-  }
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-[#050505] text-white">
-        <div className="flex min-h-screen items-center justify-center">
-          <div className="text-center">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-red-500" />
-
-            <p className="mt-4 text-xs font-bold uppercase tracking-[0.25em] text-gray-500">
-              Loading Dashboard
-            </p>
-          </div>
-        </div>
-      </main>
-    );
+  if (!user) {
+    redirect("/login");
   }
 
   const displayName =
     profile?.full_name ||
     profile?.username ||
-    email.split("@")[0] ||
+    user.email?.split("@")[0] ||
     "Player";
 
   const username = profile?.username
@@ -114,49 +41,46 @@ export default function PlayersPage() {
       {/* Navbar */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050505]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-          {/* Logo */}
-          <a
-            href="/players"
+          <Link
+            href="/"
             className="text-xl font-black tracking-tight"
           >
             PINTO{" "}
             <span className="text-red-500">
               ESPORTS.
             </span>
-          </a>
+          </Link>
 
-          {/* Navigation */}
           <nav className="hidden items-center gap-8 md:flex">
-            <a
+            <Link
               href="/tournaments"
               className="text-sm font-medium text-gray-400 transition hover:text-white"
             >
               Tournaments
-            </a>
+            </Link>
 
-            <a
-              href="/players"
+            <Link
+              href="/player"
               className="text-sm font-medium text-white"
             >
               Dashboard
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/squads"
               className="text-sm font-medium text-gray-400 transition hover:text-white"
             >
               Squads
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/players"
               className="text-sm font-medium text-gray-400 transition hover:text-white"
             >
               Players
-            </a>
+            </Link>
           </nav>
 
-          {/* Account */}
           <div className="flex items-center gap-3">
             <div className="hidden text-right sm:block">
               <p className="text-sm font-bold text-white">
@@ -182,27 +106,21 @@ export default function PlayersPage() {
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="rounded-lg border border-white/10 px-4 py-2.5 text-xs font-black uppercase tracking-wide text-gray-300 transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loggingOut ? "Logging Out..." : "Logout"}
-            </button>
+            <LogoutButton />
           </div>
         </div>
       </header>
 
       {/* Content */}
       <div className="relative z-10 mx-auto max-w-7xl px-6 py-10 md:py-14">
+
         {/* Welcome */}
         <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a]">
           <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-red-950/20 to-transparent" />
 
           <div className="relative p-7 md:p-10">
             <p className="text-xs font-black uppercase tracking-[0.3em] text-red-500">
-              Player Dashboard
+              My Player Dashboard
             </p>
 
             <h1 className="mt-4 max-w-3xl text-4xl font-black uppercase leading-[0.95] tracking-tight md:text-6xl">
@@ -220,19 +138,19 @@ export default function PlayersPage() {
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
-              <a
+              <Link
                 href="/tournaments"
                 className="rounded-lg bg-red-600 px-6 py-3.5 text-xs font-black uppercase tracking-wide transition hover:bg-red-500"
               >
                 Explore Tournaments
-              </a>
+              </Link>
 
-              <a
+              <Link
                 href="/squads"
                 className="rounded-lg border border-white/10 bg-white/[0.02] px-6 py-3.5 text-xs font-black uppercase tracking-wide text-gray-300 transition hover:border-white/20 hover:bg-white/5 hover:text-white"
               >
                 Find A Squad
-              </a>
+              </Link>
             </div>
           </div>
         </section>
@@ -260,8 +178,9 @@ export default function PlayersPage() {
           />
         </section>
 
-        {/* Main grid */}
+        {/* Main */}
         <section className="mt-10 grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
+
           {/* Tournaments */}
           <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-6 md:p-7">
             <div className="flex items-end justify-between">
@@ -275,12 +194,12 @@ export default function PlayersPage() {
                 </h2>
               </div>
 
-              <a
+              <Link
                 href="/tournaments"
                 className="text-xs font-bold uppercase tracking-wide text-gray-500 transition hover:text-white"
               >
                 View All →
-              </a>
+              </Link>
             </div>
 
             <div className="mt-6 rounded-xl border border-dashed border-white/10 bg-white/[0.015] p-8 text-center">
@@ -298,12 +217,12 @@ export default function PlayersPage() {
                 perjalanan kompetisimu.
               </p>
 
-              <a
+              <Link
                 href="/tournaments"
                 className="mt-5 inline-flex rounded-lg border border-red-500/30 px-5 py-2.5 text-xs font-black uppercase tracking-wide text-red-500 transition hover:bg-red-500/10"
               >
                 Browse Tournaments
-              </a>
+              </Link>
             </div>
           </div>
 
@@ -340,7 +259,7 @@ export default function PlayersPage() {
                 </h3>
 
                 <p className="mt-1 truncate text-xs text-gray-600">
-                  {email}
+                  {user.email}
                 </p>
               </div>
             </div>
@@ -362,12 +281,12 @@ export default function PlayersPage() {
               />
             </div>
 
-            <button
-              type="button"
-              className="mt-6 w-full rounded-lg border border-white/10 py-3 text-xs font-black uppercase tracking-wide text-gray-300 transition hover:border-white/20 hover:bg-white/5 hover:text-white"
+            <Link
+              href="/player/profile"
+              className="mt-6 flex w-full items-center justify-center rounded-lg border border-white/10 py-3 text-xs font-black uppercase tracking-wide text-gray-300 transition hover:border-white/20 hover:bg-white/5 hover:text-white"
             >
               Edit Profile
-            </button>
+            </Link>
           </div>
         </section>
 
@@ -397,7 +316,7 @@ export default function PlayersPage() {
             <ActionCard
               title="Complete Profile"
               description="Lengkapi profil kamu agar lebih mudah ditemukan komunitas."
-              href="/players"
+              href="/player/profile"
             />
           </div>
         </section>
@@ -415,9 +334,7 @@ function DashboardStat({
 }) {
   return (
     <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-5 transition hover:border-white/15">
-      <p className="text-3xl font-black">
-        {value}
-      </p>
+      <p className="text-3xl font-black">{value}</p>
 
       <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-gray-600">
         {label}
@@ -456,14 +373,12 @@ function ActionCard({
   href: string;
 }) {
   return (
-    <a
+    <Link
       href={href}
       className="group rounded-xl border border-white/10 bg-[#0a0a0a] p-6 transition hover:-translate-y-0.5 hover:border-red-500/30 hover:bg-[#0d0d0d]"
     >
       <div className="flex items-center justify-between">
-        <h3 className="font-black uppercase">
-          {title}
-        </h3>
+        <h3 className="font-black uppercase">{title}</h3>
 
         <span className="text-lg text-gray-600 transition group-hover:text-red-500">
           →
@@ -473,6 +388,6 @@ function ActionCard({
       <p className="mt-3 text-xs leading-6 text-gray-600">
         {description}
       </p>
-    </a>
+    </Link>
   );
 }

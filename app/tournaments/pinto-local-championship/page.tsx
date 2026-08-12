@@ -20,7 +20,7 @@ export default function TournamentDetailPage() {
             {/* Identity */}
             <div>
               <div className="flex flex-wrap items-center gap-3">
-                <span className="rounded-md bg-red-500/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-red-500">
+                <span className="rounded-md bg-green-500/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-green-500">
                   Registration Open
                 </span>
 
@@ -45,9 +45,9 @@ export default function TournamentDetailPage() {
 </div>
 
               <h1 className="mt-6 text-4xl font-black uppercase leading-tight md:text-6xl">
-                PINTO Local
+                SMEA PREMIUM
                 <br />
-                Championship
+                TAKENGON 
               </h1>
 
               <p className="mt-5 max-w-2xl text-sm leading-7 text-gray-500">
@@ -81,7 +81,7 @@ export default function TournamentDetailPage() {
                   </p>
 
                   <p className="mt-1 font-bold">
-                    20 August 2026
+                    22 August 2026
                   </p>
                 </div>
 
@@ -91,7 +91,7 @@ export default function TournamentDetailPage() {
                   </p>
 
                   <p className="mt-1 font-bold">
-                    Kabupaten Lokal
+                    Aceh Tengah
                   </p>
                 </div>
 
@@ -123,6 +123,9 @@ export default function TournamentDetailPage() {
                   <p className="mt-1 font-bold">
                     PINTO ESPORT
                   </p>
+
+
+                  
                 </div>
 
               </div>
@@ -234,6 +237,21 @@ export default function TournamentDetailPage() {
                 turnamen selesai dan hasil divalidasi organizer.
               </p>
             </div>
+
+<div className="mt-6 rounded-xl border border-white/10 bg-white/[0.02] p-6">
+              <div className="text-3xl">
+                💵
+              </div>
+
+              <h3 className="mt-4 font-black uppercase">
+                Fresh Money
+              </h3>
+
+              <p className="mt-3 text-sm leading-6 text-gray-500">
+                Player yang menjuarai turnamen akan mendapatkan fresh money sebagai penghargaan.
+              </p>
+            </div>
+
           </div>
 
         </section>

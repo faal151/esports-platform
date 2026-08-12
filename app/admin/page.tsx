@@ -1,3 +1,6 @@
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "../../lib/supabase/auth";
+
 const pendingReviews = [
   {
     type: "Manager Application",
@@ -26,7 +29,17 @@ const quickStats = [
   { label: "Registered Players", value: "126" },
 ];
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  const { user, profile } = await getCurrentUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  if (profile?.role !== "admin") {
+    redirect("/");
+  }
+
   return (
     <main className="min-h-screen bg-[#050505] px-6 py-10 text-white">
       <div className="mx-auto max-w-7xl">
@@ -130,15 +143,15 @@ export default function AdminPage() {
                   </span>
 
                   <a
-  href={
-    item.type === "Manager Application"
-      ? "/admin/manager-applications"
-      : "#"
-  }
-  className="rounded-lg bg-red-600 px-5 py-3 text-xs font-black uppercase tracking-wide transition hover:bg-red-500"
->
-  Review
-</a>
+                    href={
+                      item.type === "Manager Application"
+                        ? "/admin/manager-applications"
+                        : "#"
+                    }
+                    className="rounded-lg bg-red-600 px-5 py-3 text-xs font-black uppercase tracking-wide transition hover:bg-red-500"
+                  >
+                    Review
+                  </a>
                 </div>
               </div>
             ))}

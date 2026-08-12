@@ -1,821 +1,325 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { FormEvent, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "../../../lib/supabase/client";
 
-const gameRoles: Record<string, string[]> = {
-  "mobile-legends": [
-    "Jungler",
-    "Gold Lane",
-    "Mid Lane",
-    "EXP Lane",
-    "Roamer",
-  ],
+export default function RegisterPlayerPage() {
+  const router = useRouter();
+  const supabase = createClient();
 
-  "free-fire": [
-    "Rusher",
-    "Support",
-    "Sniper",
-    "IGL",
-    "Fragger",
-    "Flex",
-  ],
+  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  valorant: [
-    "Duelist",
-    "Initiator",
-    "Controller",
-    "Sentinel",
-    "Flex",
-  ],
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  "pubg-mobile": [
-    "IGL",
-    "Entry Fragger",
-    "Support",
-    "Scout",
-    "Sniper",
-    "Assaulter",
-    "Flex",
-  ],
-};
-
-export default function PlayerRegistrationPage() {
-  // Game & Role
-  const [selectedGame, setSelectedGame] = useState("");
-  const [selectedRole, setSelectedRole] = useState("");
-
-  // Errors
-  const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [nameError, setNameError] = useState("");
-  const [ignError, setIgnError] = useState("");
-  const [gameError, setGameError] = useState("");
-  const [roleError, setRoleError] = useState("");
-  const [regionError, setRegionError] = useState("");
-  const [photoError, setPhotoError] = useState("");
-
-  // Photo
-  const [photoPreview, setPhotoPreview] = useState("");
-  const [photoName, setPhotoName] = useState("");
-
-  // Refs
-  const emailRef = useRef<HTMLInputElement>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
-  const nameRef = useRef<HTMLInputElement>(null);
-  const ignRef = useRef<HTMLInputElement>(null);
-  const gameRef = useRef<HTMLSelectElement>(null);
-  const roleRef = useRef<HTMLSelectElement>(null);
-  const regionRef = useRef<HTMLInputElement>(null);
-  const photoRef = useRef<HTMLInputElement>(null);
-
-  const availableRoles = selectedGame
-    ? gameRoles[selectedGame] ?? []
-    : [];
-
-  const handlePhotoChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
-      setPhotoError(
-        "Format foto harus JPG, JPEG, PNG, atau WebP."
-      );
-
-      setPhotoPreview("");
-      setPhotoName("");
-      event.target.value = "";
-
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setPhotoError("Ukuran foto maksimal 5 MB.");
-
-      setPhotoPreview("");
-      setPhotoName("");
-      event.target.value = "";
-
-      return;
-    }
-
-    setPhotoError("");
-    setPhotoName(file.name);
-
-    const previewUrl = URL.createObjectURL(file);
-    setPhotoPreview(previewUrl);
-  };
-
-  const handleRemovePhoto = () => {
-    setPhotoPreview("");
-    setPhotoName("");
-    setPhotoError("");
-
-    if (photoRef.current) {
-      photoRef.current.value = "";
-    }
-  };
-
-  const handleSubmit = (
-    event: React.FormEvent<HTMLFormElement>
-  ) => {
+  async function handleRegister(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    // Reset all errors
-    setEmailError("");
-    setPasswordError("");
-    setNameError("");
-    setIgnError("");
-    setGameError("");
-    setRoleError("");
-    setRegionError("");
-    setPhotoError("");
+    setError("");
+    setSuccess("");
 
-    const formData = new FormData(event.currentTarget);
+    const cleanUsername = username.trim().toLowerCase();
+    const cleanFullName = fullName.trim();
+    const cleanEmail = email.trim().toLowerCase();
 
-    const email = String(
-      formData.get("email") ?? ""
-    ).trim();
-
-    const password = String(
-      formData.get("password") ?? ""
-    );
-
-    const name = String(
-      formData.get("name") ?? ""
-    ).trim();
-
-    const ign = String(
-      formData.get("ign") ?? ""
-    ).trim();
-
-    const game = String(
-      formData.get("game") ?? ""
-    ).trim();
-
-    const role = String(
-      formData.get("role") ?? ""
-    ).trim();
-
-    const region = String(
-      formData.get("region") ?? ""
-    ).trim();
-
-    let hasError = false;
-
-    /*
-     * ACCOUNT
-     */
-
-    if (!email) {
-      setEmailError("Email wajib diisi.");
-      hasError = true;
-    } else if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    ) {
-      setEmailError(
-        "Masukkan alamat email yang valid."
-      );
-      hasError = true;
-    }
-
-    if (!password) {
-      setPasswordError("Password wajib diisi.");
-      hasError = true;
-    } else if (password.length < 8) {
-      setPasswordError(
-        "Password minimal 8 karakter."
-      );
-      hasError = true;
-    }
-
-    /*
-     * PLAYER IDENTITY
-     */
-
-    if (!name) {
-      setNameError("Nama lengkap wajib diisi.");
-      hasError = true;
-    }
-
-    if (!ign) {
-      setIgnError("IGN wajib diisi.");
-      hasError = true;
-    }
-
-    if (!game) {
-      setGameError("Game wajib dipilih.");
-      hasError = true;
-    }
-
-    if (!role) {
-      setRoleError(
-        "Competitive Role wajib dipilih."
-      );
-      hasError = true;
-    } else if (
-      !gameRoles[game]?.includes(role)
-    ) {
-      setRoleError(
-        "Role tidak sesuai dengan game yang dipilih."
-      );
-      hasError = true;
-    }
-
-    if (!region) {
-      setRegionError("Region wajib diisi.");
-      hasError = true;
-    }
-
-    /*
-     * AUTO SCROLL TO FIRST ERROR
-     */
-
-    if (hasError) {
-      if (
-        !email ||
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-      ) {
-        emailRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-
-        emailRef.current?.focus();
-
-        return;
-      }
-
-      if (
-        !password ||
-        password.length < 8
-      ) {
-        passwordRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-
-        passwordRef.current?.focus();
-
-        return;
-      }
-
-      if (!name) {
-        nameRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-
-        nameRef.current?.focus();
-
-        return;
-      }
-
-      if (!ign) {
-        ignRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-
-        ignRef.current?.focus();
-
-        return;
-      }
-
-      if (!game) {
-        gameRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-
-        gameRef.current?.focus();
-
-        return;
-      }
-
-      if (
-        !role ||
-        !gameRoles[game]?.includes(role)
-      ) {
-        roleRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-
-        roleRef.current?.focus();
-
-        return;
-      }
-
-      if (!region) {
-        regionRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-
-        regionRef.current?.focus();
-
-        return;
-      }
-
+    if (!cleanUsername || !cleanFullName || !cleanEmail) {
+      setError("Semua field wajib diisi.");
       return;
     }
 
-    /*
-     * TEMPORARY SUCCESS
-     *
-     * Database belum terhubung.
-     */
+    if (cleanUsername.length < 3) {
+      setError("Username minimal 3 karakter.");
+      return;
+    }
 
-    alert(
-      "Player information valid. PINTO ID akan dibuat oleh sistem."
-    );
-  };
+    if (!/^[a-z0-9_]+$/.test(cleanUsername)) {
+      setError(
+        "Username hanya boleh menggunakan huruf kecil, angka, dan underscore."
+      );
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password minimal 8 karakter.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Konfirmasi password tidak cocok.");
+      return;
+    }
+
+    setLoading(true);
+
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: cleanEmail,
+      password,
+      options: {
+        data: {
+          username: cleanUsername,
+          full_name: cleanFullName,
+        },
+      },
+    });
+
+    if (signUpError) {
+      setError(signUpError.message);
+      setLoading(false);
+      return;
+    }
+
+    if (!data.user) {
+      setError("Registrasi gagal. Silakan coba lagi.");
+      setLoading(false);
+      return;
+    }
+
+    if (!data.session) {
+      setSuccess(
+        "Registrasi berhasil. Silakan cek email kamu untuk melakukan verifikasi."
+      );
+      setLoading(false);
+      return;
+    }
+
+    setSuccess("Registrasi berhasil. Mengarahkan ke halaman player...");
+
+    setTimeout(() => {
+      router.push("/players");
+      router.refresh();
+    }, 1000);
+  }
 
   return (
-    <main className="min-h-screen bg-[#050505] px-6 py-12 text-white">
-      <div className="mx-auto max-w-3xl">
+    <main className="min-h-screen bg-[#050505] text-white">
+      <section className="relative min-h-screen overflow-hidden">
+        {/* Background */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-1/2 top-0 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-red-600/10 blur-[150px]" />
 
-        {/* Header */}
-        <div className="mb-10 text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-red-500">
-            PINTO ESPORT
-          </p>
+          <div className="absolute bottom-0 left-0 h-[400px] w-[400px] rounded-full bg-red-950/20 blur-[140px]" />
 
-          <h1 className="mt-3 text-4xl font-black uppercase tracking-tight md:text-5xl">
-            Create Player Profile
-          </h1>
-
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-gray-500">
-            Buat identitas esports kamu dan mulai
-            membangun competitive record di PINTO.
-          </p>
+          <div
+            className="absolute inset-0 opacity-[0.035]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(255,255,255,.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px)",
+              backgroundSize: "50px 50px",
+            }}
+          />
         </div>
 
-        {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-8"
-        >
+        <div className="relative mx-auto flex min-h-screen w-full max-w-7xl items-center justify-center px-5 py-24 sm:px-8">
+          <div className="grid w-full max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a]/95 shadow-2xl shadow-black/40 lg:grid-cols-[0.9fr_1.1fr]">
+            {/* LEFT */}
+            <div className="relative hidden min-h-[680px] overflow-hidden border-r border-white/10 bg-[#080808] lg:flex lg:flex-col lg:justify-between">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,30,30,0.18),transparent_35%),radial-gradient(circle_at_70%_80%,rgba(255,30,30,0.08),transparent_40%)]" />
 
-          {/* ========================= */}
-          {/* STEP 01 — ACCOUNT */}
-          {/* ========================= */}
+              <div className="relative z-10 p-10">
+                <p className="text-xs font-bold uppercase tracking-[0.35em] text-red-500">
+                  Join the community
+                </p>
 
-          <section className="rounded-2xl border border-white/10 bg-[#0b0b0b] p-6 md:p-8">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-red-500">
-                Step 01
-              </p>
+                <h1 className="mt-6 text-5xl font-black uppercase leading-[0.95] tracking-tight">
+                  Build Your
+                  <span className="block text-red-500">Legacy.</span>
+                </h1>
 
-              <h2 className="mt-2 text-2xl font-black uppercase">
-                Account
-              </h2>
-
-              <p className="mt-2 text-sm text-gray-600">
-                Data ini digunakan untuk login ke
-                akun PINTO.
-              </p>
-            </div>
-
-            <div className="mt-6 space-y-5">
-
-              {/* Email */}
-              <div>
-                <label
-                  htmlFor="email"
-                  className="text-xs font-bold uppercase tracking-widest text-gray-500"
-                >
-                  Email
-                </label>
-
-                <input
-                  ref={emailRef}
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="mt-2 w-full rounded-lg border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-700 focus:border-red-500"
-                />
-
-                {emailError && (
-                  <p className="mt-2 text-xs font-semibold text-red-500">
-                    ⚠ {emailError}
-                  </p>
-                )}
-              </div>
-
-              {/* Password */}
-              <div>
-                <label
-                  htmlFor="password"
-                  className="text-xs font-bold uppercase tracking-widest text-gray-500"
-                >
-                  Password
-                </label>
-
-                <input
-                  ref={passwordRef}
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="Create a password"
-                  className="mt-2 w-full rounded-lg border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-700 focus:border-red-500"
-                />
-
-                {passwordError && (
-                  <p className="mt-2 text-xs font-semibold text-red-500">
-                    ⚠ {passwordError}
-                  </p>
-                )}
-              </div>
-
-            </div>
-          </section>
-
-          {/* ========================= */}
-          {/* STEP 02 — PLAYER IDENTITY */}
-          {/* ========================= */}
-
-          <section className="rounded-2xl border border-white/10 bg-[#0b0b0b] p-6 md:p-8">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-red-500">
-                Step 02
-              </p>
-
-              <h2 className="mt-2 text-2xl font-black uppercase">
-                Player Identity
-              </h2>
-
-              <p className="mt-2 text-sm text-gray-600">
-                Identitas kompetitif yang akan
-                ditampilkan pada Player Profile kamu.
-              </p>
-            </div>
-
-            <div className="mt-6 space-y-5">
-
-              {/* ========================= */}
-              {/* PLAYER PHOTO */}
-              {/* ========================= */}
-
-              <div>
-                <label
-                  htmlFor="photo"
-                  className="text-xs font-bold uppercase tracking-widest text-gray-500"
-                >
-                  Player Photo
-                </label>
-
-                <input
-                  ref={photoRef}
-                  id="photo"
-                  name="photo"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handlePhotoChange}
-                  className="mt-2 block w-full cursor-pointer rounded-lg border border-white/10 bg-black px-4 py-3 text-sm text-gray-500 file:mr-4 file:rounded-md file:border-0 file:bg-red-600 file:px-4 file:py-2 file:text-xs file:font-black file:uppercase file:text-white"
-                />
-
-                {/* Preview */}
-                {photoPreview && (
-                  <div className="mt-4 flex items-center gap-4 rounded-xl border border-white/10 bg-black p-4">
-
-                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-white/10">
-                      <img
-                        src={photoPreview}
-                        alt="Player preview"
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
-                        Selected Photo
-                      </p>
-
-                      <p className="mt-1 truncate text-sm text-gray-300">
-                        {photoName}
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleRemovePhoto}
-                      className="rounded-lg border border-red-500/30 px-4 py-2 text-xs font-black uppercase tracking-wide text-red-500 transition hover:bg-red-500/10"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-
-                {photoError && (
-                  <p className="mt-2 text-xs font-semibold text-red-500">
-                    ⚠ {photoError}
-                  </p>
-                )}
-
-                <p className="mt-2 text-xs text-gray-700">
-                  Optional · JPG, PNG, WebP · Max 5 MB
+                <p className="mt-6 max-w-sm text-sm leading-7 text-gray-400">
+                  Buat akun player dan mulai bangun perjalanan esports kamu
+                  bersama PINTO ESPORTS.
                 </p>
               </div>
 
-              {/* ========================= */}
-              {/* FULL NAME */}
-              {/* ========================= */}
-
-              <div>
-                <label
-                  htmlFor="name"
-                  className="text-xs font-bold uppercase tracking-widest text-gray-500"
-                >
-                  Full Name
-                </label>
-
-                <input
-                  ref={nameRef}
-                  id="name"
-                  name="name"
-                  type="text"
-                  placeholder="Your full name"
-                  className="mt-2 w-full rounded-lg border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-700 focus:border-red-500"
-                />
-
-                {nameError && (
-                  <p className="mt-2 text-xs font-semibold text-red-500">
-                    ⚠ {nameError}
+              <div className="relative z-10 p-10">
+                <div className="border-l-2 border-red-500 pl-5">
+                  <p className="text-sm font-semibold text-white">
+                    Your esports.
                   </p>
-                )}
-              </div>
-
-              {/* ========================= */}
-              {/* IGN */}
-              {/* ========================= */}
-
-              <div>
-                <label
-                  htmlFor="ign"
-                  className="text-xs font-bold uppercase tracking-widest text-gray-500"
-                >
-                  In-Game Name / IGN
-                </label>
-
-                <input
-                  ref={ignRef}
-                  id="ign"
-                  name="ign"
-                  type="text"
-                  placeholder="Your IGN"
-                  className="mt-2 w-full rounded-lg border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-700 focus:border-red-500"
-                />
-
-                {ignError && (
-                  <p className="mt-2 text-xs font-semibold text-red-500">
-                    ⚠ {ignError}
+                  <p className="text-sm font-semibold text-red-500">
+                    Your legacy.
                   </p>
-                )}
+                </div>
               </div>
+            </div>
 
-              {/* ========================= */}
-              {/* MAIN GAME */}
-              {/* ========================= */}
-
-              <div>
-                <label
-                  htmlFor="game"
-                  className="text-xs font-bold uppercase tracking-widest text-gray-500"
-                >
-                  Main Game
-                </label>
-
-                <select
-                  ref={gameRef}
-                  id="game"
-                  name="game"
-                  value={selectedGame}
-                  onChange={(event) => {
-                    setSelectedGame(event.target.value);
-                    setSelectedRole("");
-                  }}
-                  className="mt-2 w-full rounded-lg border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition focus:border-red-500"
-                >
-                  <option value="" disabled>
-                    Select your game
-                  </option>
-
-                  <option value="mobile-legends">
-                    Mobile Legends
-                  </option>
-
-                  <option value="free-fire">
-                    Free Fire
-                  </option>
-
-                  <option value="valorant">
-                    Valorant
-                  </option>
-
-                  <option value="pubg-mobile">
-                    PUBG Mobile
-                  </option>
-                </select>
-
-                {gameError && (
-                  <p className="mt-2 text-xs font-semibold text-red-500">
-                    ⚠ {gameError}
+            {/* RIGHT */}
+            <div className="flex items-center px-6 py-10 sm:px-10 lg:px-14">
+              <div className="w-full max-w-lg">
+                <div className="mb-8">
+                  <p className="text-xs font-bold uppercase tracking-[0.3em] text-red-500">
+                    Player Registration
                   </p>
+
+                  <h2 className="mt-3 text-3xl font-black uppercase tracking-tight sm:text-4xl">
+                    Create Account
+                  </h2>
+
+                  <p className="mt-3 text-sm leading-6 text-gray-400">
+                    Daftar sebagai player untuk mulai membangun profil esports
+                    kamu.
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="mb-5 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                    {error}
+                  </div>
                 )}
-              </div>
 
-              {/* ========================= */}
-              {/* COMPETITIVE ROLE */}
-              {/* ========================= */}
+                {success && (
+                  <div className="mb-5 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-300">
+                    {success}
+                  </div>
+                )}
 
-              <div>
-                <label
-                  htmlFor="role"
-                  className="text-xs font-bold uppercase tracking-widest text-gray-500"
-                >
-                  Competitive Role
-                </label>
-
-                <select
-                  ref={roleRef}
-                  id="role"
-                  name="role"
-                  disabled={!selectedGame}
-                  value={selectedRole}
-                  onChange={(event) => {
-                    setSelectedRole(event.target.value);
-                  }}
-                  className="mt-2 w-full rounded-lg border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition focus:border-red-500 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <option value="">
-                    {selectedGame
-                      ? "Select your role"
-                      : "Select your game first"}
-                  </option>
-
-                  {availableRoles.map((role) => (
-                    <option
-                      key={role}
-                      value={role}
+                <form onSubmit={handleRegister} className="space-y-5">
+                  {/* USERNAME */}
+                  <div>
+                    <label
+                      htmlFor="username"
+                      className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-300"
                     >
-                      {role}
-                    </option>
-                  ))}
-                </select>
+                      Username
+                    </label>
 
-                {roleError && (
-                  <p className="mt-2 text-xs font-semibold text-red-500">
-                    ⚠ {roleError}
-                  </p>
-                )}
-              </div>
+                    <input
+                      id="username"
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="contoh: pinto_player"
+                      autoComplete="username"
+                      disabled={loading}
+                      className="h-12 w-full rounded-lg border border-white/10 bg-white/[0.03] px-4 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-red-500 focus:bg-white/[0.05]"
+                    />
+                  </div>
 
-              {/* ========================= */}
-              {/* REGION */}
-              {/* ========================= */}
+                  {/* FULL NAME */}
+                  <div>
+                    <label
+                      htmlFor="fullName"
+                      className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-300"
+                    >
+                      Full Name
+                    </label>
 
-              <div>
-                <label
-                  htmlFor="region"
-                  className="text-xs font-bold uppercase tracking-widest text-gray-500"
+                    <input
+                      id="fullName"
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Nama lengkap"
+                      autoComplete="name"
+                      disabled={loading}
+                      className="h-12 w-full rounded-lg border border-white/10 bg-white/[0.03] px-4 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-red-500 focus:bg-white/[0.05]"
+                    />
+                  </div>
+
+                  {/* EMAIL */}
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-300"
+                    >
+                      Email
+                    </label>
+
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      disabled={loading}
+                      className="h-12 w-full rounded-lg border border-white/10 bg-white/[0.03] px-4 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-red-500 focus:bg-white/[0.05]"
+                    />
+                  </div>
+
+                  {/* PASSWORD */}
+                  <div>
+                    <label
+                      htmlFor="password"
+                      className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-300"
+                    >
+                      Password
+                    </label>
+
+                    <input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Minimal 8 karakter"
+                      autoComplete="new-password"
+                      disabled={loading}
+                      className="h-12 w-full rounded-lg border border-white/10 bg-white/[0.03] px-4 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-red-500 focus:bg-white/[0.05]"
+                    />
+                  </div>
+
+                  {/* CONFIRM PASSWORD */}
+                  <div>
+                    <label
+                      htmlFor="confirmPassword"
+                      className="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-300"
+                    >
+                      Confirm Password
+                    </label>
+
+                    <input
+                      id="confirmPassword"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Ulangi password"
+                      autoComplete="new-password"
+                      disabled={loading}
+                      className="h-12 w-full rounded-lg border border-white/10 bg-white/[0.03] px-4 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-red-500 focus:bg-white/[0.05]"
+                    />
+                  </div>
+
+                  {/* SUBMIT */}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="mt-2 flex h-12 w-full items-center justify-center rounded-lg bg-red-600 px-5 text-sm font-black uppercase tracking-wide text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {loading ? "Creating Account..." : "Create Player Account"}
+                  </button>
+                </form>
+
+                <div className="mt-8 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-white/10" />
+                  <span className="text-xs uppercase tracking-wider text-gray-600">
+                    Already registered?
+                  </span>
+                  <div className="h-px flex-1 bg-white/10" />
+                </div>
+
+                <Link
+                  href="/login"
+                  className="mt-5 flex h-12 w-full items-center justify-center rounded-lg border border-white/10 bg-white/[0.02] text-sm font-bold uppercase tracking-wide text-white transition hover:border-red-500 hover:text-red-500"
                 >
-                  Region
-                </label>
+                  Login
+                </Link>
 
-                <input
-                  ref={regionRef}
-                  id="region"
-                  name="region"
-                  type="text"
-                  placeholder="Kabupaten / Kota"
-                  className="mt-2 w-full rounded-lg border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none transition placeholder:text-gray-700 focus:border-red-500"
-                />
-
-                {regionError && (
-                  <p className="mt-2 text-xs font-semibold text-red-500">
-                    ⚠ {regionError}
-                  </p>
-                )}
+                <p className="mt-6 text-center text-xs leading-5 text-gray-600">
+                  Dengan membuat akun, kamu setuju untuk menggunakan platform
+                  PINTO ESPORTS secara bertanggung jawab.
+                </p>
               </div>
-
             </div>
-          </section>
-
-          {/* ========================= */}
-          {/* STEP 03 — SQUAD */}
-          {/* ========================= */}
-
-          <section className="rounded-2xl border border-white/10 bg-[#0b0b0b] p-6 md:p-8">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-red-500">
-                Step 03
-              </p>
-
-              <h2 className="mt-2 text-2xl font-black uppercase">
-                Squad
-              </h2>
-
-              <p className="mt-2 text-sm text-gray-600">
-                Kamu tidak wajib memiliki squad untuk
-                mendaftar sebagai player PINTO.
-              </p>
-            </div>
-
-            <div className="mt-6 space-y-4">
-
-              {/* Free Agent */}
-              <label className="flex cursor-pointer gap-4 rounded-xl border border-red-500/30 bg-red-500/5 p-5">
-                <input
-                  type="radio"
-                  name="squadStatus"
-                  value="free-agent"
-                  defaultChecked
-                  className="mt-1 accent-red-600"
-                />
-
-                <div>
-                  <p className="font-black uppercase">
-                    Free Agent
-                  </p>
-
-                  <p className="mt-1 text-sm text-gray-600">
-                    Saya belum tergabung dalam squad.
-                  </p>
-                </div>
-              </label>
-
-              {/* Has Squad */}
-              <label className="flex cursor-pointer gap-4 rounded-xl border border-white/10 bg-white/[0.02] p-5 transition hover:border-red-500/30">
-                <input
-                  type="radio"
-                  name="squadStatus"
-                  value="has-squad"
-                  className="mt-1 accent-red-600"
-                />
-
-                <div>
-                  <p className="font-black uppercase">
-                    I Have a Squad
-                  </p>
-
-                  <p className="mt-1 text-sm text-gray-600">
-                    Saya sudah memiliki squad dan akan
-                    menghubungkan profile saya setelah
-                    proses membership.
-                  </p>
-                </div>
-              </label>
-
-            </div>
-          </section>
-
-          {/* ========================= */}
-          {/* PINTO ID */}
-          {/* ========================= */}
-
-          <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-5">
-            <p className="text-xs font-black uppercase tracking-widest text-red-500">
-              PINTO ID
-            </p>
-
-            <p className="mt-2 text-sm leading-6 text-gray-500">
-              PINTO ID akan dibuat otomatis oleh sistem
-              setelah profile berhasil dibuat. Kamu tidak
-              perlu menentukan PINTO ID sendiri.
-            </p>
           </div>
-
-          {/* ========================= */}
-          {/* SUBMIT */}
-          {/* ========================= */}
-
-          <button
-            type="submit"
-            className="w-full rounded-xl bg-red-600 px-6 py-4 text-sm font-black uppercase tracking-widest transition hover:bg-red-500 hover:shadow-[0_0_35px_rgba(255,30,30,0.2)]"
-          >
-            Create Player Profile
-          </button>
-
-          <p className="pb-12 text-center text-xs text-gray-700">
-            Dengan membuat profile, kamu menyetujui
-            ketentuan PINTO ESPORT.
-          </p>
-
-        </form>
-      </div>
+        </div>
+      </section>
     </main>
   );
 }
