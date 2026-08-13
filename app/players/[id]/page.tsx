@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Profile = {
@@ -26,8 +27,16 @@ type PlayerGameProfile = {
   in_game_name: string | null;
   game_uid: string | null;
   rank: string | null;
+  main_lane: string | null;
   status: string;
-  profile_data: Record<string, unknown> | null;
+};
+
+type SquadMember = {
+  id: string;
+  squad_game_id: string;
+  player_game_profile_id: string;
+  role: string;
+  status: string;
 };
 
 type SquadGame = {
@@ -43,42 +52,37 @@ type Squad = {
   name: string;
   slug: string;
   description: string | null;
+  logo_url: string | null;
   status: string;
 };
 
-type SquadMember = {
-  id: string;
-  squad_game_id: string;
-  player_game_profile_id: string;
-  role: string;
-  status: string;
-};
-
-type PlayerCardData = {
-  id: string;
-  name: string;
-  avatar: string | null;
-  ign: string;
-  game: string;
-  gameSlug: string;
-  gameLogo: string | null;
-  role: string;
-  rank: string;
-  teamName: string | null;
-  teamLogo: string | null;
-  teamId: string | null;
-
-  // Belum tersedia di database
-  achievements: number;
-  wins: number;
-  matches: number;
-};
-
-export default function PlayersPage() {
+export default function PlayerDetailPage() {
+  const params = useParams();
   const supabase = createClient();
 
-  const [players, setPlayers] =
-    useState<PlayerCardData[]>([]);
+  const playerId =
+    typeof params.id === "string"
+      ? params.id
+      : "";
+
+  const [profile, setProfile] =
+    useState<Profile | null>(null);
+
+  const [gameProfiles, setGameProfiles] =
+    useState<PlayerGameProfile[]>([]);
+
+  const [games, setGames] =
+    useState<Game[]>([]);
+
+  const [squadData, setSquadData] =
+    useState<
+      {
+        gameProfileId: string;
+        squad: Squad;
+        role: string;
+        isLeader: boolean;
+      }[]
+    >([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -87,13 +91,15 @@ export default function PlayersPage() {
     useState("");
 
   useEffect(() => {
-    async function loadPlayers() {
+    if (!playerId) return;
+
+    async function loadPlayer() {
       setLoading(true);
       setError("");
 
       try {
         // =====================================================
-        // 1. PROFILES
+        // 1. PROFILE BERDASARKAN URL ID
         // =====================================================
 
         const {
@@ -101,48 +107,35 @@ export default function PlayersPage() {
           error: profileError,
         } = await supabase
           .from("profiles")
-          .select(
-            `
-              id,
-              username,
-              full_name,
-              avatar_url,
-              role
-            `
-          )
-          .eq("role", "player")
-          .order("full_name", {
-            ascending: true,
-          });
+          .select(`
+            id,
+            username,
+            full_name,
+            avatar_url,
+            role
+          `)
+          .eq("id", playerId)
+          .single();
 
         if (profileError) {
           console.error(
-            "Players profile error:",
+            "Player profile error:",
             profileError
           );
 
           setError(
-            "Daftar player belum dapat dimuat."
+            "Player tidak ditemukan."
           );
 
           return;
         }
 
-        const profiles =
-          (profileData ?? []) as Profile[];
-
-        if (profiles.length === 0) {
-          setPlayers([]);
-          return;
-        }
-
-        const playerIds =
-          profiles.map(
-            (profile) => profile.id
-          );
+        setProfile(
+          profileData as Profile
+        );
 
         // =====================================================
-        // 2. GAME PROFILES
+        // 2. GAME PROFILE PLAYER INI SAJA
         // =====================================================
 
         const {
@@ -150,26 +143,21 @@ export default function PlayersPage() {
           error: gameProfileError,
         } = await supabase
           .from("player_game_profiles")
-          .select(
-            `
-              id,
-              player_id,
-              game_id,
-              in_game_name,
-              game_uid,
-              rank,
-              status,
-              profile_data
-            `
-          )
-          .in(
-            "player_id",
-            playerIds
-          )
-          .eq(
-            "status",
-            "active"
-          );
+          .select(`
+            id,
+            player_id,
+            game_id,
+            in_game_name,
+            game_uid,
+            rank,
+            main_lane,
+            status
+          `)
+          .eq("player_id", playerId)
+          .eq("status", "active")
+          .order("created_at", {
+            ascending: true,
+          });
 
         if (gameProfileError) {
           console.error(
@@ -178,30 +166,33 @@ export default function PlayersPage() {
           );
 
           setError(
-            "Data game player belum dapat dimuat."
+            "Data game player tidak dapat dimuat."
           );
 
           return;
         }
 
-        const gameProfiles =
+        const playerGameProfiles =
           (gameProfileData ??
             []) as PlayerGameProfile[];
 
-        const gameIds = [
-          ...new Set(
-            gameProfiles.map(
-              (profile) =>
-                profile.game_id
-            )
-          ),
-        ];
+        setGameProfiles(
+          playerGameProfiles
+        );
 
         // =====================================================
         // 3. GAMES
         // =====================================================
 
-        let games: Game[] = [];
+        const gameIds = [
+          ...new Set(
+            playerGameProfiles.map(
+              (item) => item.game_id
+            )
+          ),
+        ];
+
+        let playerGames: Game[] = [];
 
         if (gameIds.length > 0) {
           const {
@@ -209,22 +200,13 @@ export default function PlayersPage() {
             error: gameError,
           } = await supabase
             .from("games")
-            .select(
-              `
-                id,
-                name,
-                slug,
-                logo_url
-              `
-            )
-            .in(
-              "id",
-              gameIds
-            )
-            .eq(
-              "status",
-              "active"
-            );
+            .select(`
+              id,
+              name,
+              slug,
+              logo_url
+            `)
+            .in("id", gameIds);
 
           if (gameError) {
             console.error(
@@ -233,49 +215,43 @@ export default function PlayersPage() {
             );
           }
 
-          games =
+          playerGames =
             (gameData ??
               []) as Game[];
         }
 
+        setGames(playerGames);
+
         // =====================================================
-        // 4. SQUAD MEMBERS
+        // 4. SQUAD MEMBERS PLAYER INI
         // =====================================================
 
         const gameProfileIds =
-          gameProfiles.map(
-            (profile) =>
-              profile.id
+          playerGameProfiles.map(
+            (item) => item.id
           );
 
         let memberships:
           SquadMember[] = [];
 
-        if (
-          gameProfileIds.length > 0
-        ) {
+        if (gameProfileIds.length > 0) {
           const {
             data: membershipData,
             error: membershipError,
           } = await supabase
             .from("squad_members")
-            .select(
-              `
-                id,
-                squad_game_id,
-                player_game_profile_id,
-                role,
-                status
-              `
-            )
+            .select(`
+              id,
+              squad_game_id,
+              player_game_profile_id,
+              role,
+              status
+            `)
             .in(
               "player_game_profile_id",
               gameProfileIds
             )
-            .eq(
-              "status",
-              "active"
-            );
+            .eq("status", "active");
 
           if (membershipError) {
             console.error(
@@ -296,8 +272,8 @@ export default function PlayersPage() {
         const squadGameIds = [
           ...new Set(
             memberships.map(
-              (membership) =>
-                membership.squad_game_id
+              (item) =>
+                item.squad_game_id
             )
           ),
         ];
@@ -305,31 +281,24 @@ export default function PlayersPage() {
         let squadGames:
           SquadGame[] = [];
 
-        if (
-          squadGameIds.length > 0
-        ) {
+        if (squadGameIds.length > 0) {
           const {
             data: squadGameData,
             error: squadGameError,
           } = await supabase
             .from("squad_games")
-            .select(
-              `
-                id,
-                squad_id,
-                game_id,
-                leader_id,
-                status
-              `
-            )
+            .select(`
+              id,
+              squad_id,
+              game_id,
+              leader_id,
+              status
+            `)
             .in(
               "id",
               squadGameIds
             )
-            .eq(
-              "status",
-              "active"
-            );
+            .eq("status", "active");
 
           if (squadGameError) {
             console.error(
@@ -350,38 +319,30 @@ export default function PlayersPage() {
         const squadIds = [
           ...new Set(
             squadGames.map(
-              (item) =>
-                item.squad_id
+              (item) => item.squad_id
             )
           ),
         ];
 
         let squads: Squad[] = [];
 
-        if (
-          squadIds.length > 0
-        ) {
+        if (squadIds.length > 0) {
           const {
-            data: squadData,
+            data: squadDataResult,
             error: squadError,
           } = await supabase
             .from("squads")
-            .select(
-              `
-                id,
-                name,
-                slug,
-                description,
-                status
-              `
-            )
+            .select(`
+              id,
+              name,
+              slug,
+              description,
+              logo_url,
+              status
+            `)
             .in(
               "id",
               squadIds
-            )
-            .eq(
-              "status",
-              "active"
             );
 
           if (squadError) {
@@ -392,20 +353,20 @@ export default function PlayersPage() {
           }
 
           squads =
-            (squadData ??
+            (squadDataResult ??
               []) as Squad[];
         }
 
         // =====================================================
-        // MAP DATA
+        // 7. MAP
         // =====================================================
 
-        const gameMap =
+        const squadGameMap =
           new Map(
-            games.map(
-              (game) => [
-                game.id,
-                game,
+            squadGames.map(
+              (item) => [
+                item.id,
+                item,
               ]
             )
           );
@@ -413,605 +374,500 @@ export default function PlayersPage() {
         const squadMap =
           new Map(
             squads.map(
-              (squad) => [
-                squad.id,
-                squad,
+              (item) => [
+                item.id,
+                item,
               ]
             )
           );
 
-        const squadGameMap =
-          new Map(
-            squadGames.map(
-              (squadGame) => [
-                squadGame.id,
-                squadGame,
-              ]
-            )
-          );
-
-        const membershipMap =
-          new Map<
-            string,
-            SquadMember[]
-          >();
+        const result:
+          {
+            gameProfileId: string;
+            squad: Squad;
+            role: string;
+            isLeader: boolean;
+          }[] = [];
 
         memberships.forEach(
           (membership) => {
-            const current =
-              membershipMap.get(
-                membership.player_game_profile_id
-              ) ?? [];
-
-            current.push(
-              membership
-            );
-
-            membershipMap.set(
-              membership.player_game_profile_id,
-              current
-            );
-          }
-        );
-
-        // =====================================================
-        // CREATE PLAYER CARDS
-        // =====================================================
-
-        const cards: PlayerCardData[] =
-          [];
-
-        profiles.forEach(
-          (profile) => {
-            const profileGames =
-              gameProfiles.filter(
-                (gameProfile) =>
-                  gameProfile.player_id ===
-                  profile.id
+            const squadGame =
+              squadGameMap.get(
+                membership.squad_game_id
               );
 
-            // -------------------------------------------------
-            // Player belum memiliki game profile
-            // -------------------------------------------------
+            if (!squadGame) return;
 
-            if (
-              profileGames.length ===
-              0
-            ) {
-              cards.push({
-                id: profile.id,
-                name:
-                  profile.full_name ||
-                  profile.username ||
-                  "Player",
-                avatar:
-                  profile.avatar_url,
-                ign:
-                  profile.username ||
-                  "PLAYER",
-                game:
-                  "Belum terdaftar",
-                gameSlug: "",
-                gameLogo: null,
-                role:
-                  "PLAYER",
-                rank:
-                  "Belum ada data",
-                teamName: null,
-                teamLogo: null,
-                teamId: null,
+            const squad =
+              squadMap.get(
+                squadGame.squad_id
+              );
 
-                achievements: 0,
-                wins: 0,
-                matches: 0,
-              });
+            if (!squad) return;
 
-              return;
-            }
+            result.push({
+              gameProfileId:
+                membership.player_game_profile_id,
 
-            // -------------------------------------------------
-            // Satu card per game profile
-            // -------------------------------------------------
+              squad,
 
-            profileGames.forEach(
-              (gameProfile) => {
-                const game =
-                  gameMap.get(
-                    gameProfile.game_id
-                  );
+              role:
+                membership.role ||
+                "MEMBER",
 
-                const playerMemberships =
-                  membershipMap.get(
-                    gameProfile.id
-                  ) ?? [];
-
-                // Cari squad untuk game ini
-                let selectedSquad:
-                  Squad | null = null;
-
-                let selectedSquadGame:
-                  SquadGame | null =
-                  null;
-
-                let selectedMembership:
-                  SquadMember | null =
-                  null;
-
-                for (
-                  const membership of playerMemberships
-                ) {
-                  const squadGame =
-                    squadGameMap.get(
-                      membership.squad_game_id
-                    );
-
-                  if (
-                    !squadGame ||
-                    squadGame.game_id !==
-                      gameProfile.game_id
-                  ) {
-                    continue;
-                  }
-
-                  const squad =
-                    squadMap.get(
-                      squadGame.squad_id
-                    );
-
-                  if (!squad) {
-                    continue;
-                  }
-
-                  selectedSquad =
-                    squad;
-
-                  selectedSquadGame =
-                    squadGame;
-
-                  selectedMembership =
-                    membership;
-
-                  break;
-                }
-
-                // ------------------------------------------------
-                // Role
-                // ------------------------------------------------
-
-                let playerRole =
-                  "PLAYER";
-
-                // Coba dari profile_data
-                if (
-                  gameProfile.profile_data
-                ) {
-                  const data =
-                    gameProfile.profile_data;
-
-                  const possibleRole =
-                    data.role ??
-                    data.main_role ??
-                    data.position;
-
-                  if (
-                    typeof possibleRole ===
-                    "string" &&
-                    possibleRole.trim()
-                  ) {
-                    playerRole =
-                      possibleRole;
-                  }
-                }
-
-                // Kalau leader squad,
-                // gunakan LEADER
-                if (
-                  selectedSquadGame &&
-                  selectedSquadGame.leader_id ===
-                    profile.id
-                ) {
-                  playerRole =
-                    "LEADER";
-                }
-
-                // Kalau ada membership role
-                else if (
-                  selectedMembership?.role
-                ) {
-                  playerRole =
-                    selectedMembership.role;
-                }
-
-                cards.push({
-                  id: profile.id,
-
-                  name:
-                    profile.full_name ||
-                    profile.username ||
-                    "Player",
-
-                  avatar:
-                    profile.avatar_url,
-
-                  ign:
-                    gameProfile.in_game_name ||
-                    profile.username ||
-                    "PLAYER",
-
-                  game:
-                    game?.name ||
-                    "Game",
-
-                  gameSlug:
-                    game?.slug ||
-                    "",
-
-                  gameLogo:
-                    game?.logo_url ||
-                    null,
-
-                  role:
-                    playerRole,
-
-                  rank:
-                    gameProfile.rank ||
-                    "Belum ada data",
-
-                  teamName:
-                    selectedSquad?.name ||
-                    null,
-
-                  teamLogo:
-                    null,
-
-                  teamId:
-                    selectedSquad?.id ||
-                    null,
-
-                  // Belum ada sumber data
-                  achievements: 0,
-                  wins: 0,
-                  matches: 0,
-                });
-              }
-            );
+              isLeader:
+                squadGame.leader_id ===
+                playerId,
+            });
           }
         );
 
-        setPlayers(cards);
+        setSquadData(result);
       } catch (err) {
         console.error(
-          "Unexpected players error:",
+          "Unexpected player detail error:",
           err
         );
 
         setError(
-          "Terjadi kesalahan saat memuat daftar player."
+          "Terjadi kesalahan saat memuat profile player."
         );
       } finally {
         setLoading(false);
       }
     }
 
-    loadPlayers();
-  }, []);
+    loadPlayer();
+  }, [playerId]);
+
+  // ===========================================================
+  // LOADING
+  // ===========================================================
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#050505] px-6 py-16 text-white">
+        <div className="mx-auto max-w-6xl">
+          <div className="animate-pulse">
+            <div className="h-4 w-32 rounded bg-white/10" />
+            <div className="mt-5 h-12 w-72 rounded bg-white/10" />
+            <div className="mt-8 h-[350px] rounded-3xl bg-white/[0.03]" />
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // ===========================================================
+  // ERROR / NOT FOUND
+  // ===========================================================
+
+  if (error || !profile) {
+    return (
+      <main className="min-h-screen bg-[#050505] px-6 py-16 text-white">
+        <div className="mx-auto max-w-6xl">
+          <Link
+            href="/players"
+            className="text-xs font-black uppercase tracking-[0.2em] text-gray-600 transition hover:text-red-500"
+          >
+            ← Back to Players
+          </Link>
+
+          <div className="mt-12 rounded-3xl border border-red-500/20 bg-red-500/[0.03] p-10">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
+              PINTO ESPORT
+            </p>
+
+            <h1 className="mt-3 text-4xl font-black uppercase">
+              Player Not Found
+            </h1>
+
+            <p className="mt-4 text-sm text-gray-500">
+              {error ||
+                "Profile player tidak ditemukan."}
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  const displayName =
+    profile.full_name ||
+    profile.username ||
+    "PLAYER";
 
   return (
-    <main className="min-h-screen bg-[#050505] px-6 py-16 text-white">
+    <main className="min-h-screen overflow-hidden bg-[#050505] text-white">
 
-      <div className="mx-auto max-w-7xl">
+      {/* BACKGROUND */}
 
-        {/* ===================================================
-            HEADER
-        =================================================== */}
+      <div className="pointer-events-none fixed inset-0 -z-0 overflow-hidden">
+        <div className="absolute left-1/4 top-0 h-[500px] w-[500px] rounded-full bg-red-600/5 blur-[150px]" />
 
-        <div className="mb-12">
-
-          <p className="text-sm font-bold uppercase tracking-[0.25em] text-red-500">
-            PINTO ESPORT
-          </p>
-
-          <h1 className="mt-3 text-5xl font-black uppercase tracking-tight">
-            Players
-          </h1>
-
-          <p className="mt-4 max-w-2xl text-gray-500">
-            Player profiles, identities, and competitive records.
-          </p>
-
-        </div>
-
-        {/* ===================================================
-            LOADING
-        =================================================== */}
-
-        {loading && (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-
-            {Array.from({
-              length: 6,
-            }).map(
-              (_, index) => (
-                <div
-                  key={index}
-                  className="h-64 animate-pulse rounded-3xl border border-white/10 bg-white/[0.03]"
-                />
-              )
-            )}
-
-          </div>
-        )}
-
-        {/* ===================================================
-            ERROR
-        =================================================== */}
-
-        {!loading &&
-          error && (
-            <div className="rounded-3xl border border-red-500/20 bg-red-500/5 p-8">
-
-              <div className="flex gap-4">
-
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-500/10 text-xl font-black text-red-400">
-                  !
-                </div>
-
-                <div>
-
-                  <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
-                    Players
-                  </p>
-
-                  <h2 className="mt-2 text-xl font-black">
-                    Daftar player belum tersedia
-                  </h2>
-
-                  <p className="mt-2 text-sm text-gray-500">
-                    {error}
-                  </p>
-
-                </div>
-
-              </div>
-
-            </div>
-          )}
-
-        {/* ===================================================
-            EMPTY
-        =================================================== */}
-
-        {!loading &&
-          !error &&
-          players.length ===
-            0 && (
-            <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-12 text-center">
-
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/[0.04] text-2xl text-gray-600">
-                —
-              </div>
-
-              <h2 className="mt-5 text-xl font-black uppercase">
-                Belum ada player
-              </h2>
-
-              <p className="mt-2 text-sm text-gray-600">
-                Belum ada player yang terdaftar di sistem.
-              </p>
-
-            </div>
-          )}
-
-        {/* ===================================================
-            PLAYERS
-        =================================================== */}
-
-        {!loading &&
-          !error &&
-          players.length >
-            0 && (
-            <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-
-              {players.map(
-                (player) => (
-                  <PlayerCardWrapper
-                    key={`${player.id}-${player.gameSlug}`}
-                    player={player}
-                  />
-                )
-              )}
-
-            </section>
-          )}
-
+        <div className="absolute right-0 top-[35%] h-[500px] w-[500px] rounded-full bg-red-900/5 blur-[150px]" />
       </div>
 
+      <div className="relative z-10 mx-auto max-w-6xl px-6 py-16">
+
+        {/* BACK */}
+
+        <Link
+          href="/players"
+          className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-gray-600 transition hover:text-red-500"
+        >
+          ← Players
+        </Link>
+
+        {/* ===================================================
+            HERO
+        =================================================== */}
+
+        <section className="mt-8 overflow-hidden rounded-3xl border border-white/10 bg-[#090909]">
+
+          <div className="h-1 bg-red-500" />
+
+          <div className="relative p-7 md:p-10">
+
+            <div className="pointer-events-none absolute right-0 top-0 h-72 w-72 rounded-full bg-red-500/[0.04] blur-[100px]" />
+
+            <div className="relative flex flex-col gap-8 md:flex-row md:items-center">
+
+              {/* AVATAR */}
+
+              <div className="h-36 w-36 shrink-0 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] md:h-44 md:w-44">
+
+                {profile.avatar_url ? (
+                  <img
+                    src={
+                      profile.avatar_url
+                    }
+                    alt={displayName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-red-500/10 text-6xl font-black text-red-500">
+                    {displayName
+                      .charAt(0)
+                      .toUpperCase()}
+                  </div>
+                )}
+
+              </div>
+
+              {/* INFO */}
+
+              <div className="min-w-0">
+
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-red-500">
+                  Player Profile
+                </p>
+
+                <h1 className="mt-3 break-words text-4xl font-black uppercase tracking-tight md:text-6xl">
+                  {displayName}
+                </h1>
+
+                {profile.username && (
+                  <p className="mt-2 text-sm font-bold text-gray-500">
+                    @{profile.username}
+                  </p>
+                )}
+
+                <div className="mt-6 flex flex-wrap gap-3">
+
+                  <span className="rounded-xl bg-red-500/10 px-4 py-2 text-[10px] font-black uppercase tracking-wide text-red-400">
+                    PLAYER
+                  </span>
+
+                  <span className="rounded-xl border border-white/10 px-4 py-2 text-[10px] font-black uppercase tracking-wide text-gray-500">
+                    {gameProfiles.length} GAME
+                    {gameProfiles.length !==
+                    1
+                      ? "S"
+                      : ""}
+                  </span>
+
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* ===================================================
+            GAME PROFILES
+        =================================================== */}
+
+        <section className="mt-12">
+
+          <p className="text-xs font-black uppercase tracking-[0.3em] text-red-500">
+            Competitive Identity
+          </p>
+
+          <h2 className="mt-3 text-4xl font-black uppercase">
+            Game Profiles
+          </h2>
+
+          {gameProfiles.length ===
+          0 ? (
+            <div className="mt-7 rounded-3xl border border-dashed border-white/10 p-8">
+              <p className="text-sm text-gray-600">
+                Player belum memiliki game profile aktif.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-7 grid gap-5 md:grid-cols-2">
+
+              {gameProfiles.map(
+                (gameProfile) => {
+                  const game =
+                    games.find(
+                      (item) =>
+                        item.id ===
+                        gameProfile.game_id
+                    );
+
+                  const squad =
+                    squadData.find(
+                      (item) =>
+                        item.gameProfileId ===
+                        gameProfile.id
+                    );
+
+                  return (
+                    <article
+                      key={
+                        gameProfile.id
+                      }
+                      className="overflow-hidden rounded-3xl border border-white/10 bg-[#090909]"
+                    >
+
+                      {/* GAME HEADER */}
+
+                      <div className="flex items-center justify-between border-b border-white/10 p-6">
+
+                        <div className="flex items-center gap-3">
+
+                          {game?.logo_url ? (
+                            <img
+                              src={
+                                game.logo_url
+                              }
+                              alt=""
+                              className="h-10 w-10 object-contain"
+                            />
+                          ) : (
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 text-sm font-black text-red-500">
+                              G
+                            </div>
+                          )}
+
+                          <div>
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-600">
+                              Game
+                            </p>
+
+                            <p className="mt-1 text-sm font-black uppercase">
+                              {game?.name ||
+                                "Game"}
+                            </p>
+                          </div>
+
+                        </div>
+
+                        <span className="rounded-lg bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase text-red-400">
+                          ACTIVE
+                        </span>
+
+                      </div>
+
+                      {/* GAME INFO */}
+
+                      <div className="p-6">
+
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-600">
+                          In Game Name
+                        </p>
+
+                        <h3 className="mt-2 text-3xl font-black uppercase">
+                          {gameProfile.in_game_name ||
+                            "PLAYER"}
+                        </h3>
+
+                        <div className="mt-6 grid grid-cols-2 gap-4">
+
+                          <DetailItem
+                            label="Rank"
+                            value={
+                              gameProfile.rank ||
+                              "Belum ada"
+                            }
+                          />
+
+                          <DetailItem
+                            label="Game UID"
+                            value={
+                              gameProfile.game_uid ||
+                              "Belum ada"
+                            }
+                          />
+
+                          <DetailItem
+                            label="Lane"
+                            value={
+                              gameProfile.main_lane ||
+                              "Belum ditentukan"
+                            }
+                          />
+
+                          <DetailItem
+                            label="Status"
+                            value="Active"
+                          />
+
+                        </div>
+
+                        {/* SQUAD */}
+
+                        {squad && (
+                          <Link
+                            href={`/squads/${squad.squad.id}`}
+                            className="mt-6 flex items-center gap-4 rounded-2xl border border-white/10 bg-black/30 p-4 transition hover:border-red-500/30 hover:bg-red-500/[0.03]"
+                          >
+
+                            {squad.squad.logo_url ? (
+                              <img
+                                src={
+                                  squad.squad.logo_url
+                                }
+                                alt={
+                                  squad.squad.name
+                                }
+                                className="h-12 w-12 rounded-xl object-contain"
+                              />
+                            ) : (
+                              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10 text-lg font-black text-red-500">
+                                {squad.squad.name
+                                  .charAt(
+                                    0
+                                  )
+                                  .toUpperCase()}
+                              </div>
+                            )}
+
+                            <div className="min-w-0 flex-1">
+
+                              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-600">
+                                Squad
+                              </p>
+
+                              <p className="mt-1 truncate text-sm font-black uppercase">
+                                {squad.squad.name}
+                              </p>
+
+                              <p className="mt-1 text-[9px] font-bold uppercase text-red-500">
+                                {squad.isLeader
+                                  ? "Leader"
+                                  : squad.role}
+                              </p>
+
+                            </div>
+
+                            <span className="text-gray-600">
+                              →
+                            </span>
+
+                          </Link>
+                        )}
+
+                      </div>
+
+                    </article>
+                  );
+                }
+              )}
+
+            </div>
+          )}
+
+        </section>
+
+        {/* ===================================================
+            STATS PLACEHOLDER
+        =================================================== */}
+
+        <section className="mt-12">
+
+          <p className="text-xs font-black uppercase tracking-[0.3em] text-red-500">
+            Competitive Record
+          </p>
+
+          <h2 className="mt-3 text-4xl font-black uppercase">
+            Statistics
+          </h2>
+
+          <div className="mt-7 grid grid-cols-3 overflow-hidden rounded-3xl border border-white/10 bg-[#090909]">
+
+            <Stat
+              value={0}
+              label="Matches"
+            />
+
+            <Stat
+              value={0}
+              label="Wins"
+            />
+
+            <Stat
+              value={0}
+              label="Awards"
+            />
+
+          </div>
+
+          <p className="mt-4 text-xs text-gray-700">
+            Statistik kompetitif akan tersedia setelah modul pertandingan diaktifkan.
+          </p>
+
+        </section>
+
+      </div>
     </main>
   );
 }
 
-// ===========================================================
-// PLAYER CARD WRAPPER
-// ===========================================================
+// =============================================================
+// DETAIL ITEM
+// =============================================================
 
-function PlayerCardWrapper({
-  player,
+function DetailItem({
+  label,
+  value,
 }: {
-  player: PlayerCardData;
+  label: string;
+  value: string;
 }) {
   return (
-    <article className="group relative overflow-hidden rounded-3xl border border-white/10 bg-[#090909] transition duration-300 hover:-translate-y-1 hover:border-red-500/30">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
 
-      {/* GAME WATERMARK */}
+      <p className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-700">
+        {label}
+      </p>
 
-      {player.gameLogo && (
-        <img
-          src={player.gameLogo}
-          alt=""
-          className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 object-contain opacity-[0.035] grayscale transition duration-500 group-hover:scale-110"
-        />
-      )}
+      <p className="mt-2 truncate text-xs font-black uppercase text-gray-400">
+        {value}
+      </p>
 
-      {/* TOP */}
-
-      <div className="relative p-5">
-
-        <div className="flex items-start gap-4">
-
-          {/* PLAYER PHOTO */}
-
-          <Link
-            href={`/players/${player.id}`}
-            className="group/photo shrink-0"
-          >
-            <div className="h-24 w-24 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
-
-              {player.avatar ? (
-                <img
-                  src={player.avatar}
-                  alt={player.name}
-                  className="h-full w-full object-cover transition duration-300 group-hover/photo:scale-105"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-2xl font-black text-red-500">
-                  {player.name
-                    .charAt(0)
-                    .toUpperCase()}
-                </div>
-              )}
-
-            </div>
-          </Link>
-
-          {/* PLAYER INFO */}
-
-          <div className="min-w-0 flex-1">
-
-            <Link
-              href={`/players/${player.id}`}
-              className="block"
-            >
-              <h2 className="truncate text-2xl font-black uppercase transition group-hover:text-red-500">
-                {player.name}
-              </h2>
-            </Link>
-
-            <p className="mt-1 truncate text-xs font-bold uppercase tracking-wide text-gray-500">
-              {player.ign}
-            </p>
-
-            <div className="mt-3 flex flex-wrap gap-2">
-
-              <span className="rounded-lg bg-red-500/10 px-3 py-1.5 text-[9px] font-black uppercase text-red-400">
-                {player.role}
-              </span>
-
-              {player.game && (
-                <span className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-[9px] font-black uppercase text-gray-500">
-
-                  {player.gameLogo && (
-                    <img
-                      src={
-                        player.gameLogo
-                      }
-                      alt=""
-                      className="h-3.5 w-3.5 object-contain"
-                    />
-                  )}
-
-                  {player.game}
-
-                </span>
-              )}
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* =================================================
-            SQUAD
-        ================================================= */}
-
-        {player.teamId &&
-          player.teamName ? (
-          <Link
-            href={`/squads/${player.teamId}`}
-            className="mt-5 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 p-3 transition hover:border-red-500/30 hover:bg-red-500/[0.04]"
-          >
-
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-sm font-black text-red-500">
-              {player.teamName
-                .charAt(0)
-                .toUpperCase()}
-            </div>
-
-            <div className="min-w-0 flex-1">
-
-              <p className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-600">
-                Squad
-              </p>
-
-              <p className="truncate text-sm font-black uppercase">
-                {player.teamName}
-              </p>
-
-            </div>
-
-            <span className="text-gray-600 transition group-hover:text-red-500">
-              →
-            </span>
-
-          </Link>
-        ) : (
-          <div className="mt-5 rounded-2xl border border-dashed border-white/10 p-3">
-
-            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-700">
-              Squad
-            </p>
-
-            <p className="mt-1 text-xs font-bold text-gray-600">
-              Belum memiliki squad
-            </p>
-
-          </div>
-        )}
-
-      </div>
-
-      {/* ===================================================
-          STATS
-      =================================================== */}
-
-      <div className="grid grid-cols-3 border-t border-white/10">
-
-        <PlayerMiniStat
-          value={player.matches}
-          label="Matches"
-        />
-
-        <PlayerMiniStat
-          value={player.wins}
-          label="Wins"
-        />
-
-        <PlayerMiniStat
-          value={player.achievements}
-          label="Awards"
-        />
-
-      </div>
-
-    </article>
+    </div>
   );
 }
 
-// ===========================================================
-// MINI STAT
-// ===========================================================
+// =============================================================
+// STAT
+// =============================================================
 
-function PlayerMiniStat({
+function Stat({
   value,
   label,
 }: {
@@ -1019,13 +875,13 @@ function PlayerMiniStat({
   label: string;
 }) {
   return (
-    <div className="border-r border-white/10 px-3 py-4 text-center last:border-r-0">
+    <div className="border-r border-white/10 px-4 py-7 text-center last:border-r-0">
 
-      <p className="text-xl font-black">
+      <p className="text-3xl font-black">
         {value}
       </p>
 
-      <p className="mt-1 text-[8px] font-black uppercase tracking-[0.15em] text-gray-600">
+      <p className="mt-2 text-[9px] font-black uppercase tracking-[0.2em] text-gray-600">
         {label}
       </p>
 

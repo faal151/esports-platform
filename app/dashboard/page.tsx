@@ -30,6 +30,13 @@ type PlayerGameProfile = {
   game: Game | null;
 };
 
+type Squad = {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+};
+
 export default function DashboardPage() {
   const supabase = createClient();
 
@@ -38,6 +45,9 @@ export default function DashboardPage() {
 
     const [gameProfiles, setGameProfiles] =
   useState<PlayerGameProfile[]>([]);
+
+  const [mySquads, setMySquads] =
+  useState<Squad[]>([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -204,6 +214,131 @@ const normalizedGameProfiles =
 setGameProfiles(
   normalizedGameProfiles
 );
+
+console.log(
+  "GAME PROFILE IDS:",
+  normalizedGameProfiles.map(
+    (item) => item.id
+  )
+);
+
+const {
+  data: squadMemberData,
+  error: squadMemberError,
+} = await supabase
+  .from("squad_members")
+  .select(`
+    id,
+    squad_game_id,
+    player_game_profile_id,
+    role,
+    status
+  `)
+  .in(
+    "player_game_profile_id",
+    normalizedGameProfiles.map(
+      (item) => item.id
+    )
+  )
+  .eq(
+    "status",
+    "active"
+  );
+
+console.log(
+  "SQUAD MEMBER DATA:",
+  squadMemberData
+);
+
+console.log(
+  "SQUAD MEMBER ERROR:",
+  squadMemberError
+);
+
+const squadGameId =
+  squadMemberData?.[0]?.squad_game_id;
+
+console.log(
+  "SQUAD GAME ID:",
+  squadGameId
+);
+
+const {
+  data: squadGameData,
+  error: squadGameError,
+} = await supabase
+  .from("squad_games")
+  .select(`
+    id,
+    squad_id,
+    game_id,
+    leader_id,
+    status
+  `)
+  .eq(
+    "id",
+    squadGameId
+  )
+  .maybeSingle();
+
+console.log(
+  "SQUAD GAME DATA:",
+  squadGameData
+);
+
+console.log(
+  "SQUAD GAME ERROR:",
+  squadGameError
+);
+
+const squadId =
+  squadGameData?.squad_id;
+
+console.log(
+  "SQUAD ID:",
+  squadId
+);
+
+const {
+  data: squadData,
+  error: squadError,
+} = await supabase
+  .from("squads")
+  .select(`
+    id,
+    name,
+    slug,
+    logo_url,
+    description,
+    status
+  `)
+  .eq(
+    "id",
+    squadId
+  )
+  .maybeSingle();
+
+console.log(
+  "SQUAD DATA:",
+  squadData
+);
+
+if (squadData) {
+  setMySquads([
+    {
+      id: squadData.id,
+      name: squadData.name,
+      slug: squadData.slug,
+      logo_url: squadData.logo_url,
+    },
+  ]);
+}
+
+console.log(
+  "SQUAD ERROR:",
+  squadError
+);
+
       } catch (err) {
         console.error(
           "Unexpected dashboard error:",
@@ -434,6 +569,76 @@ setGameProfiles(
 
 
         </section>
+
+{/* =================================================
+    MY SQUAD
+================================================= */}
+
+{mySquads.length > 0 && (
+  <section className="mt-6 rounded-[2rem] border border-white/10 bg-[#090909] p-6 sm:p-8">
+
+    <div className="flex items-center justify-between gap-4">
+
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-red-500">
+          Competitive Identity
+        </p>
+
+        <h2 className="mt-2 text-2xl font-black uppercase">
+          My Squad
+        </h2>
+      </div>
+
+    </div>
+
+    <div className="mt-6">
+
+      {mySquads.map((squad) => (
+        <a
+          key={squad.id}
+          href={`/squads/${squad.slug}`}
+          className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.02] p-4 transition hover:border-red-500/30 hover:bg-white/[0.04]"
+        >
+
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+
+            {squad.logo_url ? (
+              <img
+                src={squad.logo_url}
+                alt={squad.name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-xl font-black text-red-500">
+                {squad.name.charAt(0).toUpperCase()}
+              </span>
+            )}
+
+          </div>
+
+          <div className="min-w-0 flex-1">
+
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-600">
+              Squad
+            </p>
+
+            <h3 className="mt-1 truncate text-lg font-black uppercase">
+              {squad.name}
+            </h3>
+
+          </div>
+
+          <div className="text-gray-600 transition group-hover:translate-x-1 group-hover:text-red-500">
+            →
+          </div>
+
+        </a>
+      ))}
+
+    </div>
+
+  </section>
+)}
 
         {/* =================================================
             COMING SECTIONS

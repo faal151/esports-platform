@@ -137,7 +137,7 @@ export default function PublicSquadPage() {
             slug,
             status
           `)
-          .eq("id", squadId)
+          .eq("slug", squadId)
           .eq("status", "active")
           .maybeSingle();
 

@@ -24,6 +24,11 @@ const sponsors: Sponsor[] = [
     name: "MAMIN SELULER",
     logo: "/sponsors/mamin-seluler.png",
   },
+
+  {
+    name: "CLEO",
+    logo: "/sponsors/cleo.png",
+  },
 ];
 
 export default function SponsorCarousel() {
