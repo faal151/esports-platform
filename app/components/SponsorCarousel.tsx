@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 
 type Sponsor = {
@@ -8,56 +6,23 @@ type Sponsor = {
 };
 
 const sponsors: Sponsor[] = [
-  {
-    name: "VIVO",
-    logo: "/sponsors/vivo.webp",
-  },
-  {
-    name: "TRI",
-    logo: "/sponsors/tri.png",
-  },
-  {
-    name: "SMEA PREMIUM TAKENGON",
-    logo: "/sponsors/smea-premium.jpeg",
-  },
-  {
-    name: "MAMIN SELULER",
-    logo: "/sponsors/mamin-seluler.png",
-  },
-
-  {
-    name: "CLEO",
-    logo: "/sponsors/cleo.png",
-  },
+  { name: "VIVO", logo: "/sponsors/vivo.webp" },
+  { name: "TRI", logo: "/sponsors/tri.png" },
+  { name: "SMEA PREMIUM TAKENGON", logo: "/sponsors/smea-premium.png" },
+  { name: "MAMIN SELULER", logo: "/sponsors/mamin-seluler.png" },
+  { name: "CLEO", logo: "/sponsors/cleo.png" },
+  { name: "ICHTIAR", logo: "/sponsors/ichtiar.png" },
 ];
 
 export default function SponsorCarousel() {
-  /*
-   * Duplikasi sponsor supaya animasi bisa
-   * berjalan terus tanpa jeda.
-   */
-  const marqueeSponsors = [
-    ...sponsors,
-    ...sponsors,
-    ...sponsors,
-  ];
-
   return (
-    <section className="overflow-hidden border-y border-white/10 bg-[#080808] py-10">
-
-      <div className="mx-auto max-w-7xl px-6">
-
-        {/* ========================= */}
-        {/* HEADER */}
-        {/* ========================= */}
-
+    <section className="border-y border-white/10 bg-[#080808] py-10">
+      <div className="mx-auto max-w-7xl px-5 sm:px-6">
         <div className="mb-8 flex items-end justify-between">
-
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-red-500">
               Supported By
             </p>
-
             <h2 className="mt-2 text-xl font-black uppercase tracking-wide text-white">
               Our Sponsors
             </h2>
@@ -66,62 +31,32 @@ export default function SponsorCarousel() {
           <p className="hidden text-[10px] font-bold uppercase tracking-[0.25em] text-gray-700 md:block">
             Official Partners
           </p>
-
         </div>
 
-      </div>
-
-      {/* ========================= */}
-      {/* MARQUEE */}
-      {/* ========================= */}
-
-      <div className="relative overflow-hidden">
-
-        {/* Left fade */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-[#080808] to-transparent" />
-
-        {/* Right fade */}
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-[#080808] to-transparent" />
-
-        <div
-          className="sponsor-marquee flex w-max items-center"
-        >
-          {marqueeSponsors.map((sponsor, index) => (
+        <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
+          {sponsors.map((sponsor) => (
             <div
-              key={`${sponsor.name}-${index}`}
-              className="group flex h-28 w-[280px] shrink-0 items-center justify-center px-8"
+              key={sponsor.name}
+              className="group relative flex h-28 w-[calc((100%_-_0.75rem)_/_2)] touch-manipulation sm:w-[calc((100%_-_2rem)_/_3)] lg:w-[calc((100%_-_4rem)_/_5)] items-center justify-center overflow-hidden border border-white/10 bg-white/[0.02] px-5 transition duration-300 ease-out hover:-translate-y-1 hover:border-red-500/50 hover:bg-red-500/[0.06] hover:shadow-[0_14px_30px_rgba(239,68,68,0.14)] active:scale-[0.97] sm:h-32 sm:px-6"
             >
-              <div className="relative flex h-full w-full items-center justify-center">
+              <div className="pointer-events-none absolute -inset-x-10 -top-16 h-24 rounded-full bg-red-500/0 blur-2xl transition duration-300 group-hover:bg-red-500/20" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-red-500 transition duration-300 group-hover:scale-x-100" />
 
-                {/* Glow */}
-                <div className="pointer-events-none absolute h-20 w-40 rounded-full bg-red-500/0 blur-3xl transition-all duration-500 group-hover:bg-red-500/10" />
-
-                {/* Logo */}
-                <Image
-                  src={sponsor.logo}
-                  alt={`${sponsor.name} sponsor logo`}
-                  width={260}
-                  height={120}
-                  className="relative max-h-20 w-auto max-w-[220px] object-contain opacity-90 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100 group-hover:drop-shadow-[0_0_18px_rgba(239,68,68,0.25)]"
-                />
-
-              </div>
+              <Image
+                src={sponsor.logo}
+                alt={`${sponsor.name} sponsor logo`}
+                width={260}
+                height={120}
+                className="relative max-h-16 w-auto max-w-full object-contain opacity-90 transition duration-300 group-hover:scale-105 group-hover:opacity-100 sm:max-h-20"
+              />
             </div>
           ))}
         </div>
 
-      </div>
-
-      {/* ========================= */}
-      {/* FOOTER LABEL */}
-      {/* ========================= */}
-
-      <div className="mt-7 text-center">
-        <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-gray-800">
-          Official PINTO Partners
+        <p className="mt-5 text-center text-[9px] font-bold uppercase tracking-[0.28em] text-gray-700 sm:mt-7 sm:tracking-[0.3em]">
+          Hover or tap to highlight a partner
         </p>
       </div>
-
     </section>
   );
 }
